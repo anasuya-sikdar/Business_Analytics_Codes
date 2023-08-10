@@ -1,0 +1,287 @@
+---
+title: "CitiBike Project"
+author: "ANASUYA SIKDAR Group 4"
+date: "09/20/2022"
+output:
+  html_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Use control+Enter to run the code chunks on PC.
+Use  command+Enter to run the code chunks on MAC.
+
+## Load Packages
+
+In this section, we install and load the necessary packages. 
+
+```{r libraries, message=FALSE, include = FALSE}
+### Install packages. If you haven't install the dplyr package, please uncomment the line below to install it.
+#install.packages('dplyr')# required only once.
+#install.packages("ggplot2")
+#install.packages('epiDisplay')
+#install.packages('car')
+
+### load libraries for use in current working session
+library('dplyr')
+library('ggplot2')
+library('scales')
+library('epiDisplay')
+library('car')
+
+
+```
+
+## Import Data
+
+In this section, we import the necessary data for this lab.
+
+```{r import, include=FALSE}
+### set your working directory
+# use setwd to set your working directory
+
+# you can also go to session-> set working directory -> choose directory
+# working directory is the path to the folder and not file
+
+# make sure the path of the directory is correct, i.e., where you have stored your data
+
+setwd("C:/Users/anasu/OneDrive/Desktop/MGT585/data")
+
+### import data file
+# read the movies file using read.csv
+citibikeDemand <- read.csv(file = "citibikeDemand.csv")
+
+
+```
+
+## Task 1: Explore your data
+Explore the dataset using 5 functions: dim(), str(), colnames(), head() and tail().
+```{r}
+#Exploring the dataset using the functions dim(), str(), colnames(), head() and tail().
+
+dim(citibikeDemand)
+
+str(citibikeDemand)
+
+colnames(citibikeDemand)
+
+head(citibikeDemand)
+
+tail(citibikeDemand)
+
+# Convert any column that is supposed to be treated as a factor 
+
+
+citibikeDemand$DemandTime <- as.factor(citibikeDemand$DemandTime)
+
+citibikeDemand$DayOfWeek <- as.factor(citibikeDemand$DayOfWeek)
+
+citibikeDemand$StartStationId <- as.factor(citibikeDemand$StartStationId)
+
+citibikeDemand$EndStationId <- as.factor(citibikeDemand$EndStationId)
+
+citibikeDemand$StartStationName <- as.factor(citibikeDemand$StartStationName)
+
+citibikeDemand$EndStationName <- as.factor(citibikeDemand$EndStationName)
+
+citibikeDemand$StartNeighborhood <- as.factor(citibikeDemand$StartNeighborhood)
+
+citibikeDemand$EndNeighborhood <- as.factor(citibikeDemand$EndNeighborhood)
+
+citibikeDemand$DemandDate <- as.factor(citibikeDemand$DemandDate)
+
+citibikeDemand$Month <- as.factor(citibikeDemand$Month)
+
+
+
+citibikeDemand1 <- citibikeDemand                        # Duplicate data frame
+citibikeDemand1$StartPerCapitaIncome[is.na(citibikeDemand1$StartPerCapitaIncome)] <- mean(citibikeDemand1$StartPerCapitaIncome, na.rm = TRUE) # Replace NA in one column
+
+citibikeDemand1$EndPerCapitaIncome[is.na(citibikeDemand1$EndPerCapitaIncome)] <- mean(citibikeDemand1$EndPerCapitaIncome, na.rm = TRUE)
+
+
+
+```
+
+**Visualization**
+
+```{r}
+#Plotting Demand with respect to the DayOfWeek
+
+citibikeDemand$DayOfWeek <- factor(citibikeDemand$DayOfWeek, c( "Monday","Tuesday","Wednesday" ,"Thursday","Friday","Saturday", "Sunday")) 
+
+ggplot(citibikeDemand,aes(x = DayOfWeek, y = Demand, fill=DayOfWeek)) + 
+  geom_bar(stat = "identity")+
+    labs(title = "Citibike Demand based on the Days of The Week") + 
+         ylab("Demand of Citibike") + xlab("Days of Week") 
+
+
+#Plotting Demand by Month
+ggplot(citibikeDemand, aes( x = Month , y = Demand, fill = DemandTime, label = Demand)) +  
+  geom_bar(position = "dodge", stat = "identity")
+ 
+#Plotting Demand by Customer Proportion
+ggplot(citibikeDemand, mapping = aes(x = Customer_prop, y = Demand)) + 
+  geom_point(aes(colour=factor(DemandTime)),size=1) +
+  scale_x_log10()+
+    labs(title = "Citibike Demand based on the Customer Proportion") + 
+         ylab("Demand of CitiBike") + xlab("Customer Proportion") 
+
+#Plotting Demand by DemandTime
+p<-ggplot(citibikeDemand, aes( x = DemandTime , y = Demand, fill = DayOfWeek)) +  
+  geom_bar(position = "dodge", stat = "identity") 
+p + coord_flip()
+
+
+
+#Graph Plotting for TripDuration
+ggplot(citibikeDemand, aes(x=TripDurationMinutes)) + geom_histogram (binwidth = 1, fill = "lightblue")
+
+
+
+#Graph of StartperCapitaIncome vs Demand based on the DemandTime
+ggplot(citibikeDemand1 %>% filter(DemandTime == "daytime"), aes(x = StartPerCapitaIncome, y = Demand)) + 
+  geom_line(colour = "blue", size = 1) +
+   labs(title = "Daytime Demand based on StartPerCapitaIncome")
+  
+
+ggplot(citibikeDemand1 %>% filter(DemandTime == "evening"), aes(x = StartPerCapitaIncome, y = Demand)) + 
+  geom_line(colour = "red", size = 1) +
+   labs(title = "Evening Demand based on StartPerCapitaIncome")
+  
+
+#Graph of EndperCapitaIncome vs Demand based on the DemandTime
+ggplot(citibikeDemand1 %>% filter(DemandTime == "daytime"), aes(x = EndPerCapitaIncome, y = Demand)) + 
+  geom_line(colour = "blue", size = 1) +
+   labs(title = "Daytime Demand based on EndPerCapitaIncome")
+  
+
+ggplot(citibikeDemand1 %>% filter(DemandTime == "evening"), aes(x = EndPerCapitaIncome, y = Demand)) + 
+  geom_line(colour = "red", size = 1) +
+   labs(title = "Evening Demand based on EndPerCapitaIncome")
+  
+
+
+
+##Task 2: Descriptive Statistics
+
+# Descriptive stats for continuous variables
+# Summary of the descriptive statistic for all the variables
+summary(citibikeDemand)
+#Standard deviation for the variables
+sd(citibikeDemand$Demand)
+
+sd(citibikeDemand$TripDurationMinutes)
+
+sd(citibikeDemand$DistanceMiles)
+
+
+
+# Descriptive Stats for categorical variable; frequency distribution
+table(citibikeDemand$StartStationId )
+table(citibikeDemand$EndStationId)
+
+
+tab1(citibikeDemand$DemandTime)
+tab1(citibikeDemand$StartNeighborhood, sort.group = "decreasing")
+tab1(citibikeDemand$EndNeighborhood, sort.group = "decreasing")
+tab1(citibikeDemand$StartPerCapitaIncome, sort.group = "decreasing")
+tab1(citibikeDemand$EndPerCapitaIncome, sort.group = "decreasing")
+tab1(citibikeDemand$Month)
+tab1(citibikeDemand$DemandDate, sort.group = "decreasing")
+tab1(citibikeDemand$Temperature, sort.group = "decreasing")
+```
+
+#Predictive Analysis
+
+
+```{r}
+
+#Advanced Predictive Model Final Model
+reg_fit3 <- lm(Demand ~ factor(DemandTime) + factor(StartStationId) + factor(EndStationId) + factor(DayOfWeek) + factor(Month) , data = citibikeDemand)
+
+
+summary(reg_fit3)
+
+## Test the co-linearity in the fitted model using vif()
+
+vif(reg_fit3)
+
+
+
+#Daytime Demand
+
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "432", EndStationId = "432", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "432", EndStationId = "491", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "432", EndStationId = "514", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "432", EndStationId = "2006", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "432", EndStationId = "3158", DayOfWeek = "Thursday", Month = "8" ))
+
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "491", EndStationId = "432", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "491", EndStationId = "491", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "491", EndStationId = "514", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "491", EndStationId = "2006", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "491", EndStationId = "3158", DayOfWeek = "Thursday", Month = "8" ))
+
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "514", EndStationId = "432", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "514", EndStationId = "491", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "514", EndStationId = "514", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "514", EndStationId = "2006", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "514", EndStationId = "3158", DayOfWeek = "Thursday", Month = "8" ))
+
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "2006", EndStationId = "432", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "2006", EndStationId = "491", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "2006", EndStationId = "514", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "2006", EndStationId = "2006", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "2006", EndStationId = "3158", DayOfWeek = "Thursday", Month = "8" ))
+
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "3158", EndStationId = "432", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "3158", EndStationId = "491", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "3158", EndStationId = "514", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "3158", EndStationId = "2006", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "daytime" , StartStationId= "3158", EndStationId = "3158", DayOfWeek = "Thursday", Month = "8" ))
+
+
+#Evening Demand
+
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "432", EndStationId = "432", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "432", EndStationId = "491", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "432", EndStationId = "514", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "432", EndStationId = "2006", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "432", EndStationId = "3158", DayOfWeek = "Thursday", Month = "8" ))
+
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "491", EndStationId = "432", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "491", EndStationId = "491", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "491", EndStationId = "514", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "491", EndStationId = "2006", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "491", EndStationId = "3158", DayOfWeek = "Thursday", Month = "8" ))
+
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "514", EndStationId = "432", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "514", EndStationId = "491", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "514", EndStationId = "514", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "514", EndStationId = "2006", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "514", EndStationId = "3158", DayOfWeek = "Thursday", Month = "8" ))
+
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "2006", EndStationId = "432", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "2006", EndStationId = "491", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "2006", EndStationId = "260", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "2006", EndStationId = "2006", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "2006", EndStationId = "3158", DayOfWeek = "Thursday", Month = "8" ))
+
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "3158", EndStationId = "432", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "3158", EndStationId = "491", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "3158", EndStationId = "260", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "3158", EndStationId = "2006", DayOfWeek = "Thursday", Month = "8" ))
+predict (reg_fit3, data.frame(DemandTime = "evening" , StartStationId= "3158", EndStationId = "3158", DayOfWeek = "Thursday", Month = "8" ))
+
+
